@@ -149,6 +149,7 @@ if st.session_state.search_triggered:
     with col2:
         if st.button("❌ 전체 선택 해제"):
             st.session_state.all_checked = False
+            st.session_state.selected_images.clear()
             st.rerun()
 
     with st.spinner("이미지를 검색 중입니다..."):
