@@ -18,6 +18,8 @@ os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 # ✅ 세션 상태 초기화
 if "selected_images" not in st.session_state:
     st.session_state.selected_images = {}
+if "search_triggered" not in st.session_state:
+    st.session_state.search_triggered = False
 
 # 📥 이미지 다운로드
 
@@ -133,6 +135,9 @@ keyword = st.text_input("검색어를 입력하세요 (예: 제주오름)", valu
 count = st.slider("API별 가져올 이미지 수", 1, 20, 10)
 
 if st.button("🔎 이미지 검색"):
+    st.session_state.search_triggered = True
+
+if st.session_state.search_triggered:
     with st.spinner("이미지를 검색 중입니다..."):
         search_unsplash(keyword, count)
         search_pixabay(keyword, count)
@@ -141,7 +146,7 @@ if st.button("🔎 이미지 검색"):
 if st.session_state.selected_images:
     st.markdown("---")
     st.success(f"선택한 이미지 수: {len(st.session_state.selected_images)}")
-    if st.button("📦 선택한 이미지 ZIP 다운로드"):
+    if st.button("📆 선택한 이미지 ZIP 다운로드"):
         zip_file = create_zip(list(st.session_state.selected_images.values()))
         st.download_button("📁 ZIP 파일 저장", zip_file.getvalue(), file_name="selected_images.zip", mime="application/zip")
 else:
