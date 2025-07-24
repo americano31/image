@@ -7,7 +7,7 @@ from io import BytesIO
 from PIL import Image
 from urllib.parse import quote
 
-# 🔑 API KEY
+# 🔐 API KEY (secrets.toml에서 불러오기)
 UNSPLASH_KEY = st.secrets["UNSPLASH_KEY"]
 PIXABAY_KEY = st.secrets["PIXABAY_KEY"]
 PEXELS_KEY = st.secrets["PEXELS_KEY"]
