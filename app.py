@@ -47,7 +47,9 @@ def search_unsplash(keyword, count):
                 st.image(img_url, use_container_width=True)
                 checked = st.checkbox(f"Unsplash #{idx+1}", key=checkbox_id)
                 if checked:
-                    st.session_state.selected_images[checkbox_id] = (img_url, origin_url)
+                    photographer = photo["user"]["name"]
+                    st.session_state.selected_images[checkbox_id] = (img_url, origin_url, photographer)
+
                 elif checkbox_id in st.session_state.selected_images:
                     del st.session_state.selected_images[checkbox_id]
     else:
@@ -92,7 +94,9 @@ def search_pexels(keyword, count):
                 st.image(img_url, use_container_width=True)
                 checked = st.checkbox(f"Pexels #{idx+1}", key=checkbox_id)
                 if checked:
-                    st.session_state.selected_images[checkbox_id] = (img_url, origin_url)
+                    photographer = photo["user"]["name"]
+                    st.session_state.selected_images[checkbox_id] = (img_url, origin_url, photographer)
+
                 elif checkbox_id in st.session_state.selected_images:
                     del st.session_state.selected_images[checkbox_id]
     else:
@@ -103,18 +107,19 @@ def search_pexels(keyword, count):
 def create_zip(images, zip_name="selected_images.zip"):
     zip_buffer = BytesIO()
     with zipfile.ZipFile(zip_buffer, "w") as zipf:
-        for idx, (url, origin_link) in enumerate(images):
+        for idx, (url, origin_link, author) in enumerate(images):
             try:
                 response = requests.get(url, timeout=10)
                 if response.status_code == 200:
                     ext = url.split(".")[-1].split("?")[0]
-                    img_data = response.content
-                    filename = f"image_{idx+1}.{ext}"
-                    zipf.writestr(filename, img_data)
-                    zipf.writestr(f"image_{idx+1}.txt", f"Source: {origin_link}")
+                    safe_author = author.replace(" ", "_").replace("/", "_")
+                    filename = f"image_{idx+1}_by_{safe_author}.{ext}"
+                    zipf.writestr(filename, response.content)
+                    zipf.writestr(f"image_{idx+1}.txt", f"Source: {origin_link}\nAuthor: {author}")
             except:
                 continue
     return zip_buffer
+
 
 # ▶ Streamlit 앱 UI
 st.title("🔍 이미지 검색 & 선택 다운로드")
