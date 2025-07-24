@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 import os
 import zipfile
+import re
 from io import BytesIO
 from PIL import Image
 from urllib.parse import quote
@@ -19,6 +20,7 @@ if "selected_images" not in st.session_state:
     st.session_state.selected_images = {}
 
 # 📥 이미지 다운로드
+
 def download_image(url, save_path):
     try:
         response = requests.get(url, timeout=10)
@@ -31,6 +33,7 @@ def download_image(url, save_path):
     return False
 
 # 🔍 Unsplash 검색
+
 def search_unsplash(keyword, count):
     st.markdown("### 📷 Unsplash")
     headers = {"Authorization": f"Client-ID {UNSPLASH_KEY}"}
@@ -42,19 +45,20 @@ def search_unsplash(keyword, count):
         for idx, photo in enumerate(results):
             img_url = photo["urls"]["small"]
             origin_url = photo["links"]["html"]
-            photographer = photo["user"]["name"]
+            author = photo["user"].get("name", "unknown")
             checkbox_id = f"unsplash_{idx}"
             with cols[idx % 5]:
                 st.image(img_url, use_container_width=True)
                 checked = st.checkbox(f"Unsplash #{idx+1}", key=checkbox_id)
                 if checked:
-                    st.session_state.selected_images[checkbox_id] = (img_url, origin_url, photographer)
+                    st.session_state.selected_images[checkbox_id] = (img_url, origin_url, author)
                 elif checkbox_id in st.session_state.selected_images:
                     del st.session_state.selected_images[checkbox_id]
     else:
         st.warning("Unsplash에서 이미지를 가져올 수 없습니다.")
 
 # 🔍 Pixabay 검색
+
 def search_pixabay(keyword, count):
     st.markdown("### 📸 Pixabay")
     url = f"https://pixabay.com/api/?key={PIXABAY_KEY}&q={quote(keyword)}&per_page={count}&image_type=photo"
@@ -65,19 +69,20 @@ def search_pixabay(keyword, count):
         for idx, item in enumerate(results):
             img_url = item["webformatURL"]
             page_url = item["pageURL"]
-            photographer = item.get("user", "Pixabay")
+            author = item.get("user", "unknown")
             checkbox_id = f"pixabay_{idx}"
             with cols[idx % 5]:
                 st.image(img_url, use_container_width=True)
                 checked = st.checkbox(f"Pixabay #{idx+1}", key=checkbox_id)
                 if checked:
-                    st.session_state.selected_images[checkbox_id] = (img_url, page_url, photographer)
+                    st.session_state.selected_images[checkbox_id] = (img_url, page_url, author)
                 elif checkbox_id in st.session_state.selected_images:
                     del st.session_state.selected_images[checkbox_id]
     else:
         st.warning("Pixabay API 오류")
 
 # 🔍 Pexels 검색
+
 def search_pexels(keyword, count):
     st.markdown("### 📷 Pexels")
     headers = {"Authorization": PEXELS_KEY}
@@ -89,13 +94,13 @@ def search_pexels(keyword, count):
         for idx, photo in enumerate(results):
             img_url = photo["src"]["medium"]
             origin_url = photo["url"]
-            photographer = photo["photographer"]
+            author = photo["photographer"]
             checkbox_id = f"pexels_{idx}"
             with cols[idx % 5]:
                 st.image(img_url, use_container_width=True)
                 checked = st.checkbox(f"Pexels #{idx+1}", key=checkbox_id)
                 if checked:
-                    st.session_state.selected_images[checkbox_id] = (img_url, origin_url, photographer)
+                    st.session_state.selected_images[checkbox_id] = (img_url, origin_url, author)
                 elif checkbox_id in st.session_state.selected_images:
                     del st.session_state.selected_images[checkbox_id]
     else:
@@ -110,30 +115,24 @@ def create_zip(images, zip_name="selected_images.zip"):
             try:
                 response = requests.get(url, timeout=10)
                 if response.status_code == 200:
-                    ext = url.split(".")[-1].split("?")[0]
+                    ext = url.split("?")[0].split(".")[-1]
                     img_data = response.content
-                    safe_author = author.replace(" ", "_").replace("/", "_")
+                    safe_author = re.sub(r'\W+', '_', author) if author else 'unknown'
                     filename = f"image_{idx+1}_by_{safe_author}.{ext}"
                     zipf.writestr(filename, img_data)
-                    zipf.writestr(f"image_{idx+1}.txt", f"Source: {origin_link}\nAuthor: {author}")
+                    zipf.writestr(f"image_{idx+1}.txt", f"Source: {origin_link}")
             except:
                 continue
     return zip_buffer
 
 # ▶ Streamlit 앱 UI
+
 st.title("🔍 이미지 검색 & 선택 다운로드")
 
 keyword = st.text_input("검색어를 입력하세요 (예: 제주오름)", value="비행기")
 count = st.slider("API별 가져올 이미지 수", 1, 20, 10)
 
-# 검색 상태 유지
-if "search_done" not in st.session_state:
-    st.session_state.search_done = False
-
 if st.button("🔎 이미지 검색"):
-    st.session_state.search_done = True
-
-if st.session_state.search_done:
     with st.spinner("이미지를 검색 중입니다..."):
         search_unsplash(keyword, count)
         search_pixabay(keyword, count)
