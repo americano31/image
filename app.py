@@ -118,7 +118,7 @@ def create_zip(images, zip_name="selected_images.zip"):
             try:
                 response = requests.get(url, timeout=10)
                 if response.status_code == 200:
-                    ext = "jpg"  # Unsplash 원본 링크는 확장자 명확하지 않아 .jpg로 고정
+                    ext = "jpg"
                     img_data = response.content
                     safe_author = re.sub(r'\W+', '_', author) if author else 'unknown'
                     filename = f"image_{idx+1}_by_{safe_author}.{ext}"
@@ -127,6 +127,24 @@ def create_zip(images, zip_name="selected_images.zip"):
             except:
                 continue
     return zip_buffer
+
+# 📂 폴더에 저장 (로컬 환경 전용)
+
+def save_images_to_folder(images, folder="selected_images"):
+    os.makedirs(folder, exist_ok=True)
+    for idx, (url, origin_link, author) in enumerate(images):
+        try:
+            response = requests.get(url, timeout=10)
+            if response.status_code == 200:
+                ext = "jpg"
+                safe_author = re.sub(r'\W+', '_', author) if author else 'unknown'
+                filename = f"image_{idx+1}_by_{safe_author}.{ext}"
+                with open(os.path.join(folder, filename), "wb") as f:
+                    f.write(response.content)
+                with open(os.path.join(folder, f"image_{idx+1}.txt"), "w", encoding="utf-8") as f:
+                    f.write(f"Source: {origin_link}")
+        except:
+            continue
 
 # ▶ Streamlit 앱 UI
 
@@ -147,8 +165,14 @@ if st.session_state.search_triggered:
 if st.session_state.selected_images:
     st.markdown("---")
     st.success(f"선택한 이미지 수: {len(st.session_state.selected_images)}")
-    if st.button("📆 선택한 이미지 ZIP 다운로드"):
-        zip_file = create_zip(list(st.session_state.selected_images.values()))
-        st.download_button("📁 ZIP 파일 저장", zip_file.getvalue(), file_name="selected_images.zip", mime="application/zip")
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("📁 선택한 이미지 ZIP 저장"):
+            zip_file = create_zip(list(st.session_state.selected_images.values()))
+            st.download_button("💾 ZIP 파일 다운로드", zip_file.getvalue(), file_name="selected_images.zip", mime="application/zip")
+    with col2:
+        if st.button("📂 선택한 이미지 폴더 저장 (로컬 전용)"):
+            save_images_to_folder(list(st.session_state.selected_images.values()))
+            st.success("💾 로컬 폴더에 이미지가 저장되었습니다! (현재 작업 중인 PC에서만 확인 가능)")
 else:
     st.info("이미지를 하나 이상 선택해주세요.")
