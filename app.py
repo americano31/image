@@ -165,14 +165,26 @@ if st.session_state.search_triggered:
 if st.session_state.selected_images:
     st.markdown("---")
     st.success(f"선택한 이미지 수: {len(st.session_state.selected_images)}")
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("📁 선택한 이미지 ZIP 저장"):
+    download_mode = st.radio("다운로드 방식 선택", ["ZIP으로 저장", "이미지별 다운로드"])
+
+    if download_mode == "ZIP으로 저장":
+        if st.button("📁 ZIP 저장"):
             zip_file = create_zip(list(st.session_state.selected_images.values()))
             st.download_button("💾 ZIP 파일 다운로드", zip_file.getvalue(), file_name="selected_images.zip", mime="application/zip")
-    with col2:
-        if st.button("📂 선택한 이미지 폴더 저장 (로컬 전용)"):
-            save_images_to_folder(list(st.session_state.selected_images.values()))
-            st.success("💾 로컬 폴더에 이미지가 저장되었습니다! (현재 작업 중인 PC에서만 확인 가능)")
+
+    elif download_mode == "이미지별 다운로드":
+        for idx, (url, origin_link, author) in enumerate(st.session_state.selected_images.values()):
+            cols = st.columns([4, 1, 2])
+            with cols[0]:
+                st.image(url, use_column_width=True)
+            with cols[1]:
+                st.download_button(
+                    label="💾 이미지 다운로드",
+                    data=requests.get(url).content,
+                    file_name=f"image_{idx+1}_by_{author}.jpg",
+                    mime="image/jpeg"
+                )
+            with cols[2]:
+                st.markdown(f"[🔗 출처 바로가기]({origin_link})")
 else:
     st.info("이미지를 하나 이상 선택해주세요.")
