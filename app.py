@@ -45,12 +45,13 @@ def search_unsplash(keyword, count):
         results = response.json().get("results", [])
         cols = st.columns(5)
         for idx, photo in enumerate(results):
-            img_url = photo["urls"]["small"]
+            thumb_url = photo["urls"]["small"]
+            img_url = photo["urls"]["raw"]  # ✅ 다운로드용 원본 URL 사용
             origin_url = photo["links"]["html"]
             author = photo["user"].get("name", "unknown")
             checkbox_id = f"unsplash_{idx}"
             with cols[idx % 5]:
-                st.image(img_url, use_container_width=True)
+                st.image(thumb_url, use_container_width=True)
                 checked = st.checkbox(f"Unsplash #{idx+1}", key=checkbox_id)
                 if checked:
                     st.session_state.selected_images[checkbox_id] = (img_url, origin_url, author)
@@ -117,7 +118,7 @@ def create_zip(images, zip_name="selected_images.zip"):
             try:
                 response = requests.get(url, timeout=10)
                 if response.status_code == 200:
-                    ext = url.split("?")[0].split(".")[-1]
+                    ext = "jpg"  # Unsplash 원본 링크는 확장자 명확하지 않아 .jpg로 고정
                     img_data = response.content
                     safe_author = re.sub(r'\W+', '_', author) if author else 'unknown'
                     filename = f"image_{idx+1}_by_{safe_author}.{ext}"
