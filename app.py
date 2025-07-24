@@ -42,14 +42,13 @@ def search_unsplash(keyword, count):
         for idx, photo in enumerate(results):
             img_url = photo["urls"]["small"]
             origin_url = photo["links"]["html"]
+            photographer = photo["user"]["name"]
             checkbox_id = f"unsplash_{idx}"
             with cols[idx % 5]:
                 st.image(img_url, use_container_width=True)
                 checked = st.checkbox(f"Unsplash #{idx+1}", key=checkbox_id)
                 if checked:
-                    photographer = photo["user"]["name"]
                     st.session_state.selected_images[checkbox_id] = (img_url, origin_url, photographer)
-
                 elif checkbox_id in st.session_state.selected_images:
                     del st.session_state.selected_images[checkbox_id]
     else:
@@ -66,12 +65,13 @@ def search_pixabay(keyword, count):
         for idx, item in enumerate(results):
             img_url = item["webformatURL"]
             page_url = item["pageURL"]
+            photographer = item.get("user", "Pixabay")
             checkbox_id = f"pixabay_{idx}"
             with cols[idx % 5]:
                 st.image(img_url, use_container_width=True)
                 checked = st.checkbox(f"Pixabay #{idx+1}", key=checkbox_id)
                 if checked:
-                    st.session_state.selected_images[checkbox_id] = (img_url, page_url)
+                    st.session_state.selected_images[checkbox_id] = (img_url, page_url, photographer)
                 elif checkbox_id in st.session_state.selected_images:
                     del st.session_state.selected_images[checkbox_id]
     else:
@@ -89,14 +89,13 @@ def search_pexels(keyword, count):
         for idx, photo in enumerate(results):
             img_url = photo["src"]["medium"]
             origin_url = photo["url"]
+            photographer = photo["photographer"]
             checkbox_id = f"pexels_{idx}"
             with cols[idx % 5]:
                 st.image(img_url, use_container_width=True)
                 checked = st.checkbox(f"Pexels #{idx+1}", key=checkbox_id)
                 if checked:
-                    photographer = photo["user"]["name"]
                     st.session_state.selected_images[checkbox_id] = (img_url, origin_url, photographer)
-
                 elif checkbox_id in st.session_state.selected_images:
                     del st.session_state.selected_images[checkbox_id]
     else:
@@ -112,14 +111,14 @@ def create_zip(images, zip_name="selected_images.zip"):
                 response = requests.get(url, timeout=10)
                 if response.status_code == 200:
                     ext = url.split(".")[-1].split("?")[0]
+                    img_data = response.content
                     safe_author = author.replace(" ", "_").replace("/", "_")
                     filename = f"image_{idx+1}_by_{safe_author}.{ext}"
-                    zipf.writestr(filename, response.content)
+                    zipf.writestr(filename, img_data)
                     zipf.writestr(f"image_{idx+1}.txt", f"Source: {origin_link}\nAuthor: {author}")
             except:
                 continue
     return zip_buffer
-
 
 # ▶ Streamlit 앱 UI
 st.title("🔍 이미지 검색 & 선택 다운로드")
@@ -127,7 +126,7 @@ st.title("🔍 이미지 검색 & 선택 다운로드")
 keyword = st.text_input("검색어를 입력하세요 (예: 제주오름)", value="비행기")
 count = st.slider("API별 가져올 이미지 수", 1, 20, 10)
 
-# 검색 여부 상태 저장
+# 검색 상태 유지
 if "search_done" not in st.session_state:
     st.session_state.search_done = False
 
@@ -139,7 +138,6 @@ if st.session_state.search_done:
         search_unsplash(keyword, count)
         search_pixabay(keyword, count)
         search_pexels(keyword, count)
-
 
 if st.session_state.selected_images:
     st.markdown("---")
