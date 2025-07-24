@@ -20,6 +20,8 @@ if "selected_images" not in st.session_state:
     st.session_state.selected_images = {}
 if "search_triggered" not in st.session_state:
     st.session_state.search_triggered = False
+if "all_checked" not in st.session_state:
+    st.session_state.all_checked = False
 
 # 📥 이미지 다운로드
 
@@ -46,13 +48,13 @@ def search_unsplash(keyword, count):
         cols = st.columns(5)
         for idx, photo in enumerate(results):
             thumb_url = photo["urls"]["small"]
-            img_url = photo["urls"]["raw"]  # ✅ 다운로드용 원본 URL 사용
+            img_url = photo["urls"]["raw"]
             origin_url = photo["links"]["html"]
             author = photo["user"].get("name", "unknown")
             checkbox_id = f"unsplash_{idx}"
             with cols[idx % 5]:
                 st.image(thumb_url, use_container_width=True)
-                checked = st.checkbox(f"Unsplash #{idx+1}", key=checkbox_id)
+                checked = st.checkbox(f"Unsplash #{idx+1}", key=checkbox_id, value=st.session_state.all_checked)
                 if checked:
                     st.session_state.selected_images[checkbox_id] = (img_url, origin_url, author)
                 elif checkbox_id in st.session_state.selected_images:
@@ -76,7 +78,7 @@ def search_pixabay(keyword, count):
             checkbox_id = f"pixabay_{idx}"
             with cols[idx % 5]:
                 st.image(img_url, use_container_width=True)
-                checked = st.checkbox(f"Pixabay #{idx+1}", key=checkbox_id)
+                checked = st.checkbox(f"Pixabay #{idx+1}", key=checkbox_id, value=st.session_state.all_checked)
                 if checked:
                     st.session_state.selected_images[checkbox_id] = (img_url, page_url, author)
                 elif checkbox_id in st.session_state.selected_images:
@@ -101,7 +103,7 @@ def search_pexels(keyword, count):
             checkbox_id = f"pexels_{idx}"
             with cols[idx % 5]:
                 st.image(img_url, use_container_width=True)
-                checked = st.checkbox(f"Pexels #{idx+1}", key=checkbox_id)
+                checked = st.checkbox(f"Pexels #{idx+1}", key=checkbox_id, value=st.session_state.all_checked)
                 if checked:
                     st.session_state.selected_images[checkbox_id] = (img_url, origin_url, author)
                 elif checkbox_id in st.session_state.selected_images:
@@ -128,24 +130,6 @@ def create_zip(images, zip_name="selected_images.zip"):
                 continue
     return zip_buffer
 
-# 📂 폴더에 저장 (로컬 환경 전용)
-
-def save_images_to_folder(images, folder="selected_images"):
-    os.makedirs(folder, exist_ok=True)
-    for idx, (url, origin_link, author) in enumerate(images):
-        try:
-            response = requests.get(url, timeout=10)
-            if response.status_code == 200:
-                ext = "jpg"
-                safe_author = re.sub(r'\W+', '_', author) if author else 'unknown'
-                filename = f"image_{idx+1}_by_{safe_author}.{ext}"
-                with open(os.path.join(folder, filename), "wb") as f:
-                    f.write(response.content)
-                with open(os.path.join(folder, f"image_{idx+1}.txt"), "w", encoding="utf-8") as f:
-                    f.write(f"Source: {origin_link}")
-        except:
-            continue
-
 # ▶ Streamlit 앱 UI
 
 st.title("🔍 이미지 검색 & 선택 다운로드")
@@ -157,6 +141,14 @@ if st.button("🔎 이미지 검색"):
     st.session_state.search_triggered = True
 
 if st.session_state.search_triggered:
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("✅ 전체 선택"):
+            st.session_state.all_checked = True
+    with col2:
+        if st.button("❌ 전체 선택 해제"):
+            st.session_state.all_checked = False
+
     with st.spinner("이미지를 검색 중입니다..."):
         search_unsplash(keyword, count)
         search_pixabay(keyword, count)
