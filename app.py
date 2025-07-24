@@ -8,9 +8,9 @@ from PIL import Image
 from urllib.parse import quote
 
 # 🔑 API KEY
-UNSPLASH_KEY = "j5lyiOKj0bj6iMFPgvCnO0cCB_eWEyx5NsXZr3VRR94"
-PIXABAY_KEY = "51462455-6f4af1014e035b145b2e7731b"
-PEXELS_KEY = "kd1frTIFwfExQIR5DIGn1eKJ7gEGUIbbWDKSmi3sLjGhv9nDVP0Qmnnh"
+UNSPLASH_KEY = st.secrets["UNSPLASH_KEY"]
+PIXABAY_KEY = st.secrets["PIXABAY_KEY"]
+PEXELS_KEY = st.secrets["PEXELS_KEY"]
 
 DOWNLOAD_DIR = "images"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
