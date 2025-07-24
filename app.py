@@ -145,9 +145,11 @@ if st.session_state.search_triggered:
     with col1:
         if st.button("✅ 전체 선택"):
             st.session_state.all_checked = True
+            st.rerun()
     with col2:
         if st.button("❌ 전체 선택 해제"):
             st.session_state.all_checked = False
+            st.rerun()
 
     with st.spinner("이미지를 검색 중입니다..."):
         search_unsplash(keyword, count)
