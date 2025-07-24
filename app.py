@@ -122,11 +122,19 @@ st.title("🔍 이미지 검색 & 선택 다운로드")
 keyword = st.text_input("검색어를 입력하세요 (예: 제주오름)", value="비행기")
 count = st.slider("API별 가져올 이미지 수", 1, 20, 10)
 
+# 검색 여부 상태 저장
+if "search_done" not in st.session_state:
+    st.session_state.search_done = False
+
 if st.button("🔎 이미지 검색"):
+    st.session_state.search_done = True
+
+if st.session_state.search_done:
     with st.spinner("이미지를 검색 중입니다..."):
         search_unsplash(keyword, count)
         search_pixabay(keyword, count)
         search_pexels(keyword, count)
+
 
 if st.session_state.selected_images:
     st.markdown("---")
